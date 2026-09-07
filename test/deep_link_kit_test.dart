@@ -86,5 +86,55 @@ void main() {
     test('options expose appHost from uriPrefix', () {
       expect(options.appHost, 'demo.deeplinkkit.com');
     });
+
+    test('toCreateApiJson sends nested SDK fields', () {
+      final body = DynamicLinkParameters(
+        link: Uri.parse('https://www.example.com/product/123?ref=1'),
+        androidParameters: AndroidParameters(
+          packageName: 'com.example.app',
+          fallbackUrl: Uri.parse('https://play.google.com/store'),
+          minimumVersion: 30,
+        ),
+        iosParameters: const IOSParameters(
+          bundleId: 'com.example.app.ios',
+          appStoreId: '123456789',
+          customScheme: 'example',
+          ipadBundleId: 'com.example.app.ipad',
+          minimumVersion: '14.0',
+        ),
+        socialMetaTagParameters: SocialMetaTagParameters(
+          title: 'Sale',
+          description: 'Summer',
+          imageUrl: Uri.parse('https://cdn.example.com/og.png'),
+        ),
+        googleAnalyticsParameters: const GoogleAnalyticsParameters(
+          source: 'twitter',
+          medium: 'social',
+          campaign: 'promo',
+        ),
+        itunesConnectAnalyticsParameters: const ItunesConnectAnalyticsParameters(
+          providerToken: 'pt1',
+          campaignToken: 'ct1',
+        ),
+        navigationInfoParameters: const NavigationInfoParameters(
+          forcedRedirectEnabled: true,
+        ),
+      ).toCreateApiJson();
+
+      expect(body['deep_link_path'], '/product/123?ref=1');
+      expect(body['destination_url'], 'https://www.example.com/product/123?ref=1');
+      expect(body['title'], 'Sale');
+      expect(body['android'], {
+        'package_name': 'com.example.app',
+        'fallback_url': 'https://play.google.com/store',
+        'minimum_version': 30,
+      });
+      expect(body['ios']['bundle_id'], 'com.example.app.ios');
+      expect(body['ios']['ipad_bundle_id'], 'com.example.app.ipad');
+      expect(body['social']['image_url'], 'https://cdn.example.com/og.png');
+      expect(body['google_analytics']['source'], 'twitter');
+      expect(body['itunes']['provider_token'], 'pt1');
+      expect(body['navigation']['forced_redirect_enabled'], isTrue);
+    });
   });
 }

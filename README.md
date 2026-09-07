@@ -31,6 +31,17 @@ It demonstrates `buildLink` / `buildShortLink` and `getInitialLink` / `onLink`.
 
 ## Install
 
+From [GitHub](https://github.com/dotsbit/deep_link_kit):
+
+```yaml
+dependencies:
+  deep_link_kit:
+    git:
+      url: https://github.com/dotsbit/deep_link_kit.git
+```
+
+Or from pub.dev (when published):
+
 ```yaml
 dependencies:
   deep_link_kit: ^0.1.0
@@ -156,10 +167,16 @@ final PendingDynamicLinkData? data =
 
 ## How it maps to mlink
 
+| SDK | mlink |
+|-----|--------|
+| `buildShortLink` | `POST /api/v1/links` with `android`, `ios`, `social`, `google_analytics`, `itunes`, `navigation` |
+| `getDynamicLink` on `/l/{code}` | `GET /api/v1/links/{code}` (returns the same fields, including UTM) |
+| `getInitialLink` / `onLink` | `app_links` |
+
 | SDK call | Backend |
 |----------|---------|
-| `buildShortLink` | `POST /api/v1/links` |
-| `getDynamicLink` on `/l/{code}` | `GET /api/v1/links/{code}` |
+| `buildShortLink` | `POST /api/v1/links` with `android`, `ios`, `social`, `google_analytics`, `itunes`, `navigation` |
+| `getDynamicLink` on `/l/{code}` | `GET /api/v1/links/{code}` (same fields, including UTM) |
 | `buildLink` | Local query encoding (no network) |
 | `getInitialLink` / `onLink` | `app_links` |
 

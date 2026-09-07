@@ -33,18 +33,10 @@ class MlinkApi {
     required String uriPrefix,
     ShortDynamicLinkType shortLinkType = ShortDynamicLinkType.short,
   }) async {
-    final deepLinkPath = _deepLinkPathFrom(parameters.link);
-    final destinationUrl = _destinationUrl(parameters);
-    final social = parameters.socialMetaTagParameters;
-
-    final body = <String, dynamic>{
-      'deep_link_path': deepLinkPath,
-      'destination_url': ?destinationUrl,
-      'title': ?social?.title,
-      'description': ?social?.description,
-      if (shortLinkType == ShortDynamicLinkType.unguessable)
-        'short_code': _unguessableCode(),
-    };
+    final body = parameters.toCreateApiJson();
+    if (shortLinkType == ShortDynamicLinkType.unguessable) {
+      body['short_code'] = _unguessableCode();
+    }
 
     final headers = <String, String>{
       'Content-Type': 'application/json',
@@ -96,8 +88,15 @@ class MlinkApi {
   }
 
   /// Resolves `GET /api/v1/links/:code`.
-  Future<({String deepLinkPath, String? destinationUrl, String url})?>
-      resolveShortCode(String code) async {
+  Future<
+      ({
+        String deepLinkPath,
+        String? destinationUrl,
+        String url,
+        Map<String, String> utmParameters,
+        int? androidMinimumVersion,
+        String? iosMinimumVersion,
+      })?> resolveShortCode(String code) async {
     late final http.Response response;
     try {
       response = await _http.get(
@@ -125,25 +124,52 @@ class MlinkApi {
       deepLinkPath: link['deep_link_path'] as String,
       destinationUrl: link['destination_url'] as String?,
       url: link['url'] as String,
+      utmParameters: _utmFromLinkJson(link),
+      androidMinimumVersion: _androidMinimumVersion(link),
+      iosMinimumVersion: _iosMinimumVersion(link),
     );
   }
 
   void dispose() => _http.close();
 
-  static String _deepLinkPathFrom(Uri link) {
-    final path = link.path.isEmpty ? '/' : link.path;
-    if (!link.hasQuery) return path.startsWith('/') ? path : '/$path';
-    final withQuery = '$path?${link.query}';
-    return withQuery.startsWith('/') ? withQuery : '/$withQuery';
+  static Map<String, String> _utmFromLinkJson(Map<String, dynamic> link) {
+    final out = <String, String>{};
+    final nested = link['google_analytics'];
+    final ga = nested is Map<String, dynamic> ? nested : const <String, dynamic>{};
+    const keys = {
+      'utm_source': 'source',
+      'utm_medium': 'medium',
+      'utm_campaign': 'campaign',
+      'utm_term': 'term',
+      'utm_content': 'content',
+    };
+    for (final entry in keys.entries) {
+      final value = link[entry.key] ?? ga[entry.value] ?? ga[entry.key];
+      if (value is String && value.isNotEmpty) {
+        out[entry.key] = value;
+      }
+    }
+    return out;
   }
 
-  static String? _destinationUrl(DynamicLinkParameters p) {
-    final android = p.androidParameters?.fallbackUrl?.toString();
-    final ios = p.iosParameters?.fallbackUrl?.toString();
-    if (p.link.isScheme('http') || p.link.isScheme('https')) {
-      return p.link.toString();
-    }
-    return android ?? ios;
+  static int? _androidMinimumVersion(Map<String, dynamic> link) {
+    final nested = link['android'];
+    final raw = nested is Map<String, dynamic>
+        ? (nested['minimum_version'] ?? link['android_minimum_version'])
+        : link['android_minimum_version'];
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    if (raw is String && raw.isNotEmpty) return int.tryParse(raw);
+    return null;
+  }
+
+  static String? _iosMinimumVersion(Map<String, dynamic> link) {
+    final nested = link['ios'];
+    final raw = nested is Map<String, dynamic>
+        ? nested['minimum_version']
+        : link['ios_minimum_version'];
+    if (raw is String && raw.isNotEmpty) return raw;
+    return null;
   }
 
   static String _unguessableCode() {

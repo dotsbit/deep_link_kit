@@ -156,7 +156,12 @@ class DeepLinkKit {
           fallback: resolved.destinationUrl,
         ),
         shortLink: Uri.parse(resolved.url),
-        utmParameters: _utmFrom(link),
+        utmParameters: {
+          ..._utmFrom(link),
+          ...resolved.utmParameters,
+        },
+        minimumAppVersion: resolved.androidMinimumVersion,
+        iosMinimumVersion: resolved.iosMinimumVersion,
       );
     }
 
