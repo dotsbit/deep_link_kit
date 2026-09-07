@@ -1,0 +1,21 @@
+name: deep_link_kit
+description: Firebase Dynamic Links–style Flutter SDK for DeepLinkKit (mlink). Create and receive dynamic links with a familiar API.
+version: 0.1.0
+homepage: https://deeplinkkit.com
+
+environment:
+  sdk: ^3.12.2
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  app_links: ^7.2.1
+  http: ^1.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
